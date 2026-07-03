@@ -4,12 +4,14 @@ require('dotenv').config(); // loads .env locally; on Railway, vars come from th
 const express = require('express');
 const { version } = require('./package.json');
 const webhookRouter = require('./routes/webhook');
+const adminRouter = require('./routes/admin');
 
 const app = express();
 app.use(express.urlencoded({ extended: false })); // Twilio posts form-encoded
 app.use(express.json());
 
 app.use('/webhook', webhookRouter);
+app.use('/admin', adminRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', version });
