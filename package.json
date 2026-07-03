@@ -1,0 +1,23 @@
+{
+  "name": "maybach-agent",
+  "version": "1.0.0",
+  "description": "WhatsApp AI booking concierge for Maybach Rentals (Mumbai) — Twilio + Anthropic + Supabase + Google Sheets",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "simulate": "node scripts/simulate.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.0",
+    "@supabase/supabase-js": "^2.49.0",
+    "express": "^4.21.0",
+    "googleapis": "^144.0.0",
+    "twilio": "^5.4.0"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}
