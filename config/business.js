@@ -8,9 +8,9 @@
 // maybachrental.com. Default until confirmed:
 const BUSINESS_NAME = 'Maybach Rentals';
 
-// PLACEHOLDER model — swap to a Fable/Mythos model string later by
-// changing AI_MODEL in the environment (or the fallback below).
-const AI_MODEL = process.env.AI_MODEL || 'claude-sonnet-4-20250514';
+// The ONLY model reference in the codebase — swap to a Fable/Mythos model
+// string later by changing AI_MODEL in the environment (or the fallback below).
+const AI_MODEL = process.env.AI_MODEL || 'claude-sonnet-5';
 
 const CONTACT = {
   phone: '+91 9892904433',
@@ -33,9 +33,9 @@ const POLICIES = {
   decorationPrice: 2500, // PLACEHOLDER — TODO(dhruv): confirm floral decoration price
 };
 
-// ── FLEET (hardcoded fallback; live data comes from the Google Sheet) ──
+// ── FLEET (single source of truth — edit prices and cars right here) ──
 // All prices are per 8 Hrs / 80 Km package, INR. All vehicles 5.0 rated.
-// TODO(dhruv): full 40+ vehicle catalogue + offers come from the Google Sheet.
+// TODO(dhruv): expand to the full 40+ vehicle catalogue + offers.
 const FLEET = [
   { name: 'Bentley Flying Spur',    model: 'W12',      category: 'Luxury Sedan',   colour: 'White', capacity_pax: 4, package_price: 20000, package_terms: '8 Hrs / 80 Km', status: 'available' },
   { name: 'Mercedes Maybach S600',  model: 'S600',     category: 'Luxury Sedan',   colour: 'White', capacity_pax: 4, package_price: 12000, package_terms: '8 Hrs / 80 Km', status: 'available' },

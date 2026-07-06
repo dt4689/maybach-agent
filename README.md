@@ -6,7 +6,7 @@ car rentals, Mumbai · Navi Mumbai · Thane). Node.js + Express, deployable to R
 - **AI**: Anthropic API (model isolated in one constant — `AI_MODEL`)
 - **Messaging**: Twilio WhatsApp API (sandbox today → real number later, env-only switch)
 - **Persistence**: Supabase (Postgres) — falls back to in-memory storage if not configured
-- **Fleet & availability**: Google Sheets (read) — falls back to the hardcoded fleet
+- **Fleet & pricing**: lives in `config/business.js` — one file, human-editable
 - **Admin**: password-protected dark-luxury lead dashboard at `/admin`
 - **Alerts**: WhatsApp summary to the owner when a lead becomes qualified/confirmed
 
@@ -20,14 +20,13 @@ Twilio WhatsApp API ──POST──► /webhook (Express)
                                  │
                                  ├─ lib/ratelimit.js   (10 msgs/min per number)
                                  ├─ lib/store.js       (Supabase or in-memory)
-                                 ├─ lib/sheets.js      (Fleet + Availability tabs, fallback)
                                  ├─ lib/prompt.js      (the luxury-concierge system prompt)
                                  ├─ lib/agent.js       (Anthropic conversation engine)
                                  ├─ lib/alerts.js      (owner WhatsApp alert)
                                  └─ lib/twilio.js      (send reply)
 ```
 
-Every external call (Twilio, Anthropic, Supabase, Sheets) is wrapped in try/catch —
+Every external call (Twilio, Anthropic, Supabase) is wrapped in try/catch —
 a single bad message never crashes the agent; the customer always gets a graceful reply.
 
 ## Project layout
@@ -36,16 +35,18 @@ a single bad message never crashes the agent; the customer always gets a gracefu
 config/business.js       ← ALL editable business data: brand name, fleet, prices, copy, AI_MODEL
 lib/prompt.js            ← the agent personality (edit freely, no logic here)
 lib/agent.js             ← Anthropic conversation engine + lead extraction
-lib/sheets.js            ← Google Sheets reader (Fleet + Availability) with fallback
 lib/twilio.js            ← WhatsApp send helper
 lib/store.js             ← Supabase persistence (in-memory fallback)
 lib/alerts.js            ← owner lead alerts
 lib/ratelimit.js         ← per-number throttling
 routes/webhook.js        ← POST/GET /webhook
+routes/missedcall.js     ← POST /missed-call (Twilio voice → WhatsApp follow-up)
+lib/missedcall.js        ← missed-call follow-up pipeline
 routes/admin.js          ← GET /admin (+ /admin/api/leads)
 server.js                ← Express app, /health
 supabase/migrations/     ← SQL migration
 scripts/simulate.js      ← end-to-end conversation simulator (no Twilio needed)
+scripts/simulate-missed-call.js ← missed-call follow-up simulator
 ```
 
 ## Setup
@@ -70,24 +71,7 @@ Minimum to test locally: `ANTHROPIC_API_KEY`. Everything else degrades gracefull
 RLS is enabled on both tables; the server uses the service role key, which bypasses RLS.
 Never expose the service role key to a browser.
 
-### 3. Google Sheets (optional — fallback works without it)
-
-<!-- TODO(dhruv): share the real Sheet ID + confirm tab structure -->
-
-1. Create a Google Cloud service account, enable the **Google Sheets API**,
-   download the JSON key.
-2. Paste the JSON (single line) into `GOOGLE_SERVICE_ACCOUNT_JSON`.
-3. Share the sheet (Viewer) with the service account's email.
-4. Put the sheet ID (from its URL) in `GOOGLE_SHEETS_ID`.
-
-Expected tabs:
-
-| Tab | Columns |
-|---|---|
-| `Fleet` | name, model, category, colour, capacity_pax, package_price, package_terms, status |
-| `Availability` | vehicle, date (YYYY-MM-DD), status (`booked` / `available`) |
-
-### 4. Twilio WhatsApp **Sandbox** — test on your own WhatsApp today
+### 3. Twilio WhatsApp **Sandbox** — test on your own WhatsApp today
 
 1. Sign up / log in at [twilio.com](https://www.twilio.com), copy **Account SID**
    and **Auth Token** (Console home) into `.env`.
@@ -106,7 +90,7 @@ Expected tabs:
    `https://<your-url>/webhook` (method **POST**). Save.
 7. WhatsApp "hi" to the sandbox number — the concierge replies. 🥂
 
-### 5. Switching to Maybach's real number (later)
+### 4. Switching to Maybach's real number (later)
 
 Apply for WhatsApp Business API sender approval on the real number in the Twilio
 console, then change **only**:
@@ -117,7 +101,7 @@ TWILIO_WHATSAPP_NUMBER=whatsapp:+919892904433
 
 No code changes.
 
-### 6. Deploy to Railway
+### 5. Deploy to Railway
 
 1. Push this repo to GitHub, then in [Railway](https://railway.app):
    **New Project → Deploy from GitHub repo**.
@@ -131,6 +115,7 @@ No code changes.
 ```bash
 npm run simulate wedding   # full wedding-booking conversation transcript
 npm run simulate airport   # airport-transfer conversation transcript
+node scripts/simulate-missed-call.js +91XXXXXXXXXX   # missed-call follow-up
 ```
 
 Uses the real Anthropic API + real agent code with an in-memory store and console
@@ -152,5 +137,6 @@ Everything a human might want to tune lives in two files:
 |---|---|
 | `POST /webhook` | Inbound WhatsApp from Twilio → runs agent → replies |
 | `GET /webhook` | Twilio URL verification (returns 200) |
+| `POST /missed-call` | Twilio Voice status callback → WhatsApp follow-up + lead record |
 | `GET /admin` | Password-protected lead dashboard (Basic auth, user `admin`) |
 | `GET /health` | `{ "status": "ok", "version": "..." }` |
