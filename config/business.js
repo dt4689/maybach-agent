@@ -10,7 +10,7 @@ const BUSINESS_NAME = 'Maybach Rentals';
 
 // The ONLY model reference in the codebase — swap to a Fable/Mythos model
 // string later by changing AI_MODEL in the environment (or the fallback below).
-const AI_MODEL = process.env.AI_MODEL || 'claude-sonnet-5';
+const AI_MODEL = process.env.AI_MODEL || 'claude-sonnet-4-6';
 
 const CONTACT = {
   phone: '+91 9892904433',
